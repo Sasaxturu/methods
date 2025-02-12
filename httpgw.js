@@ -50,7 +50,7 @@ if (isMainThread) {
             const cpuUsage = os.loadavg()[0]; // Mengambil load avg 1 menit
             const memoryUsage = process.memoryUsage().rss / 1024 / 1024; // Mengambil penggunaan memori dalam MB
 
-            console.log(`CPU Load: ${cpuUsage.toFixed(2)} - RAM Usage: ${memoryUsage.toFixed(2)} MB`);
+            console.log(`SXUDIA STRESSER TELE @abibsaudia`);
 
             // Jika penggunaan CPU lebih dari 98% (0.98 dari load average max 1)
             if (cpuUsage > 0.98 * os.cpus().length) {
