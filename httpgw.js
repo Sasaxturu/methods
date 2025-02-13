@@ -2,7 +2,7 @@ const https = require('https');
 const fs = require('fs');
 const { Worker, isMainThread, workerData } = require('worker_threads');
 const { URL } = require('url');
-const HttpsProxyAgent = require('https-proxy-agent'); // Impor https-proxy-agent
+const HttpsProxyAgent = require('https-proxy-agent'); // Perbaiki cara impor
 
 if (isMainThread) {
     if (process.argv.length < 7) {
