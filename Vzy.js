@@ -905,10 +905,10 @@ const targetURL = parsedTarget.host;
 const MAX_RAM_PERCENTAGE = 90;
 const RESTART_DELAY = 1000;
 colors.enable();
-const coloredString = "Methods Vzy By @XynXz25.".white;
+const coloredString = "Methods CATMIA By tele @abibsaudia.".white;
 if (cluster.isMaster) {
     console.clear()
-    console.log(`[!] Vzy Methods By @XynXz25`.red);
+    console.log(`[!] CATMIA Methods By tele @abibsaudia`.red);
     console.log(`--------------------------------------------`.white);
     console.log("[•] Heap Size:".green, (v8.getHeapStatistics().heap_size_limit / (1024 * 1024)).toString().white);
     console.log('[•] Target: '.white + process.argv[2].cyan);
