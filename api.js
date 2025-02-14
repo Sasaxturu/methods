@@ -11,6 +11,7 @@ const methods = {
     RAW: 'Raw.js',
     TLS: 'tls.js',
     CATMIA: 'Vzy.js',
+    MIAMIX: 'MIXMAX.js',
     MIXBIL: 'MIXBIL.js',
     H2MERIS: 'H2-MERIS.js',
     H2FLOOD: 'H2-FLOOD.js'
@@ -26,6 +27,8 @@ const generateCommand = (method, host, port, time) => {
             return `cd /root/methods && node H2-FLOOD.js ${host} ${time} 64 4 proxy.txt`;
         case 'CATMIA':
             return `cd /root/methods && node Vzy.js ${host} ${time} 64 4 proxy.txt`;
+        case 'MIAMIX':
+            return `cd /root/methods && node MIXMAX.js ${host} ${time} 32 4 proxy.txt`;
         case 'TLS':
             return `cd /root/methods && node tls.js ${host} ${time} 64 4 proxy.txt`;
         case 'BROWSER':
