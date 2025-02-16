@@ -11,6 +11,7 @@ const methods = {
     RAW: 'Raw.js',
     H2GECKO: 'HTTP-GECKO.js',
     TLS: 'tls.js',
+    TLSNET: 'Tlsnet.js
     CATMIA: 'Vzy.js',
     MIAMIX: 'MIXMAX.js',
     MIXBIL: 'MIXBIL.js',
@@ -33,6 +34,8 @@ const generateCommand = (method, host, port, time) => {
             return `cd /root/methods && node MIXMAX.js ${host} ${time} 8 4 proxy.txt`;
         case 'TLS':
             return `cd /root/methods && node tls.js ${host} ${time} 64 4 proxy.txt`;
+        case 'TLSNET':
+            return `cd /root/methods && node Tlsnet.js ${host} ${time} 64 4 proxy.txt`;
         case 'H2GECKO':
             return `cd /root/methods && node HTTP-GECKO.js ${host} ${time} 64 4 proxy.txt`;
         case 'BROWSER':
