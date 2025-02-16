@@ -11,7 +11,7 @@ const methods = {
     RAW: 'Raw.js',
     H2GECKO: 'HTTP-GECKO.js',
     TLS: 'tls.js',
-    TLSNET: 'Tlsnet.js
+    TLSNET: 'Tlsnet.js',
     CATMIA: 'Vzy.js',
     MIAMIX: 'MIXMAX.js',
     MIXBIL: 'MIXBIL.js',
