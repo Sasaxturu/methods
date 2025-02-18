@@ -19,8 +19,8 @@ const methods = {
     H2MERIS: 'H2-MERIS.js',
     H2FLOOD: 'H2-FLOOD.js',
     TCPSSH: 'tcpssh.js',
-    TCP: 'tcp',
-    UDP: 'udp'
+    TCP: 'tcp.c',
+    UDP: 'udp.c'
 };
 
 const activeProcesses = new Map();
@@ -90,7 +90,7 @@ app.get('/api', (req, res) => {
     });
 
     const command = generateCommand(method, host, port, time);
-    const process = spawn('bash', ['-c', command], { detached: true });
+    const process = spawn('bash', ['-c', command], { detached: true, stdio: 'inherit' });
 
     process.stdout.on('data', (data) => {
         console.log(`Stdout: ${data}`);
