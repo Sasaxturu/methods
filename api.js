@@ -18,7 +18,9 @@ const methods = {
     MIXBIL: 'MIXBIL.js',
     H2MERIS: 'H2-MERIS.js',
     H2FLOOD: 'H2-FLOOD.js',
-    TCPSSH: 'tcpssh.js'
+    TCPSSH: 'tcpssh.js',
+    TCP: 'tcp.c',
+    UDP: 'udp.c'
 };
 
 const activeProcesses = new Map();
