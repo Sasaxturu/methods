@@ -58,9 +58,9 @@ const generateCommand = (method, host, port, time) => {
         case 'TCPSSH':
             return `cd /root/methods && screen -dm node tcpssh.js ${host} ${port} root ${time}`;
         case 'UDP':
-            return `cd /root/.methods && gcc udp.c -o udp && ./udp ${host} ${port} ${time}`;
+            return `cd /root/methods && gcc udp.c -o udp && ./udp ${host} ${port} ${time}`;
         case 'TCP':
-            return `cd /root/.methods && gcc tcp.c -o tcp && ./tcp ${host} ${port} 3 ${time}`;
+            return `cd /root/methods && gcc tcp.c -o tcp && ./tcp ${host} ${port} 3 ${time}`;
         default:
             return `cd /root/methods && node ${methods[method]} ${host} ${time}`;
     }
