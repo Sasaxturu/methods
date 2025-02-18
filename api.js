@@ -19,8 +19,8 @@ const methods = {
     H2MERIS: 'H2-MERIS.js',
     H2FLOOD: 'H2-FLOOD.js',
     TCPSSH: 'tcpssh.js',
-    TCP1: 'tcp.c',
-    UDP1: 'udp.c'
+    TCP: 'tcp.c',
+    UDP: 'udp.c'
 };
 
 const activeProcesses = new Map();
