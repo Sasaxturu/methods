@@ -36,7 +36,7 @@ const generateCommand = (method, host, port, time) => {
         case 'CATMIA':
             return `cd /root/methods && node Vzy.js ${host} ${time} 32 4 proxy.txt`;
         case 'MIX':
-            return `cd /root/methods && node mix.js ${host} ${time} 4 64 proxy.txt -v 2`;
+            return `cd /root/methods && node mix.js ${host} ${time} 4 64 proxy.txt -v 3`;
         case 'TLS':
             return `cd /root/methods && node tls.js ${host} ${time} 64 4 proxy.txt`;
         case 'TLSNET':
