@@ -34,7 +34,7 @@ const generateCommand = (method, host, port, time) => {
         case 'H2MIA':
             return `cd /root/methods && node H2ABIB.js ${host} ${time} 64 4 proxy.txt`;
         case 'SIXX':
-            return `cd /root/methods && node SIX.js ${host} ${time} 32 4 proxy.txt`;
+            return `cd /root/methods && node SIX.js ${host} ${time} 8 4 proxy.txt`;
         case 'CATMIA':
             return `cd /root/methods && node Vzy.js ${host} ${time} 32 4 proxy.txt`;
         case 'MIX':
